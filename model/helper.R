@@ -1,29 +1,58 @@
 
-colors = sample(palette())[1:6]
+colors = sample(palette())[1:7]
 
-log_l <- function(mu,w,x, tau){
-  return(sum(log(w%*%(sapply(x, FUN = dnorm, mean = mu, sd = sqrt(1/tau))))))
+get_table <- function(values){
+  df = data.frame(rbind(t(values$mean),
+                        t(values$var),
+                        t(values$b_var),
+                        t(values$gamma_con),
+                        t(values$t_eff)))
+  row.names(df) = c('Mean', 'Var','Tau_B','Gamma_G','T_eff')
+  table = xtable(df, digits = 4)
+  return(table)
+}
+
+log_l <-function(mu, tau, x, w){
+  C = length(mu)
+  l = 0
+  for (c in 1:C){
+    l = l + w[c] * dnorm(x, mu[c], sqrt(1/tau[c]))
+  }
+  
+  return(sum(log(l)))
 }
 
 l <-function(mu, w, x, tau){
-  return(exp(log_l(mu,w, x, tau)))
+  return(exp(log_l(mu,tau, x, w)))
 }
 
-eval_l <- function(mu1,mu2,w, x, tau, log=TRUE) {
-  if (log == FALSE) (likelihood = l) else (likelihood = log_l)
-  return (apply(cbind(mu1, mu2),1, likelihood, w = w, x=x, tau=tau))
-}
-
-model_checking <-function(Sample, y){
+model_checking <-function(MC_, y, get_dic = TRUE){
+  ncol_mc = ncol(MC_)
   
-  if(dim(Sample)[2]>5){
+  if (which(colnames(MC_) == 'x_new')){
     par(mfrow=c(1,1))
-    hist(y, freq = FALSE, xlab = 'x', ylab = 'Density', main = 'P.P. Check')
-    lines(density(Sample[,6]), col='red')
     
+    hist(y, freq = FALSE, xlab = 'x', ylab = 'Density', main = NA, ylim = c(0, 0.15))
+    
+    col_new_x  = which(colnames(MC_) == 'x_new')
+    lines(density(MC_[,col_new_x]), col='red')
   }
-  dic = DIC(Sample[,c(1:5)], y)
-  return(dic)
+  if(get_dic){
+    dic = DIC(MC_[,c(1:ncol_mc-1)], y)  
+    return(dic)
+  }
+}
+
+
+new_x_sim <-function(MC_){
+  
+  new_x = rep(NA, nrow(MC_))
+  for (i in 1:nrow(MC_)){
+    comp = rmultinom(1,1,prob = c(MC_[1,1], MC_[1,2]))
+    new_x[i] = rnorm(1, mean = c(MC_[1,3], MC_[1,4]), sd = sqrt(1/ MC_[1,5]))
+  }
+  return(cbind(MC_, new_x))
+  
 }
 
 DIC <- function(Sample, y) {
@@ -31,13 +60,14 @@ DIC <- function(Sample, y) {
   lik = rep(NA, S)
   
   for (i in 1:S) {
-    gr(w1, w2, mu1, mu2, tau) %=% Sample[i, ]
-    lik[i] = eval_l(mu1, mu2, c(w1, w2), y, tau, log = TRUE)
+    w = Sample[i,1:2]; mu = Sample[i, 3:4]; tau = Sample[i, 5:ncol(Sample)]
+    lik[i] = log_l(mu, tau, y, w)
   }
-  gr(w1, w2, mu1, mu2, tau) %=% colMeans(Sample)
+  theta_hat = colMeans(Sample)
+  w = theta_hat[1:2]; mu = theta_hat[3:4]; tau = theta_hat[5:ncol(Sample)]
   
   D_bar = -2 * mean(lik)
-  D_hat = -2 * eval_l(mu1, mu2, c(w1, w2), y, tau, log = TRUE)
+  D_hat = -2 * log_l(mu, tau, y, w)
   pD = D_bar - D_hat
   pV = var(-2 * lik) / 2
   return (list(
@@ -49,17 +79,19 @@ DIC <- function(Sample, y) {
     Dhat = D_hat
   ))
 }
-  
 
 show_mcmc <-function(MC_){
   
-  
   J = dim(MC_)[2]
-  if(J>6){
-    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau_1', 'tau_2','X_new')  
-  } else{
-    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau_1','tau_2')
+  
+  if (any(colnames(MC_) == 'lambda[1]')){
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau', 'x_new')
+  }else if(J>6){
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2','x_new')  
+  }else{
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2')  
   }
+  
   par(mfrow=c(2,3))
   for (i in 1:J){
     plot(cumsum(MC_[,i])/(1:nrow(MC_)), type = 'l', col = colors[i], xlab= 'Iteration', ylab='Running Mean') 
@@ -79,14 +111,41 @@ show_mcmc <-function(MC_){
   
   res = list(
     'Sample' = as.mcmc(MC_),
-    'Mean' = colMeans(MC_),
-    'sd' = apply(MC_, 2, sd),
+    'mean' = colMeans(MC_),
     'var' = apply(MC_, 2, var),
+    'b_var' = batch_var(MC_, 100),
+    'gamma_con' = gamma_est(MC_),
     'HPD' = HPDinterval(as.mcmc(MC_)),
-    'effective_size' = effectiveSize(as.mcmc(MC_))
+    't_eff' = effectiveSize(as.mcmc(MC_))
   )
   return(res)
 }
+
+gamma_est <-function(MC_){
+  s = ncol(MC_)
+  var_est = rep(NA, s)
+  for (i in 1:s){
+    var_est[i] =  mcmc::initseq(MC_[,i])$var.pos
+  }
+    return(var_est)
+}
+
+batch_var <- function(MC_, batch_size = 200){
+  n_col = ncol(MC_)
+  group_split = ceiling(seq_along(MC_[,1])/batch_size)
+  B = max(group_split)
+  b_var = rep(NA, n_col)
+  
+  for (i in 1:n_col){
+    
+    samples = split(MC_[,i], group_split)
+    b_means = lapply(samples, mean)
+    i_hat = mean(MC_[,i])
+    b_var[i] = B * 1 / (batch_size - 1)  * sum((unlist(b_means) - i_hat)^2)
+  }
+  return (b_var)  
+}
+
 
 fix_label_switching <-function(MC_, C, J, mc_clust){
   
@@ -111,7 +170,7 @@ fix_label_switching <-function(MC_, C, J, mc_clust){
   # return(permuted_mcmc[,c(2,1,4,3,5)])
 }
 
-gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10, predict_x = FALSE){
+gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10,predict_x = FALSE){
   
   gr(alpha_0, mu_0, tau_0, a_0, b_0 )%=% hyper
   n = length(x)
@@ -151,23 +210,6 @@ gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10
     prec = tau_0 + N * Tau[k + 1, ]
     delta = N * Tau[k + 1,] / prec
     
-    # mu_prop = Mu[k, ] + runif(2 , min=-100  ,max=100)
-    # 
-    # omega = runif(1, min = 0, max = 1)
-    # cond = c( target(mu_prop, tau=Tau[k+1]) / target (Mu[k,], tau = Tau[k+1,]))
-    
-    
-    # if (anyNA(cond)){
-    #   return(Mu[k,])
-    # }
-    # ACCEPT = (omega < min( cond, 1 ))
-    # Mu[k+1, ] = Mu[k,]
-    # 
-    # if(ACCEPT){
-    #   Mu[k+1, ] = mu_prop
-    # }
-    
-
     Mu[k + 1, ] = rnorm(
       n = C,
       mean = delta * colSums(Z * x) / N + (1 - delta) * mu_0,
@@ -201,7 +243,7 @@ gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10
   }
   if (n_thin >0){
     mask = seq(1, nrow(Sample_mc), n_thin)
-    Sample_mc = Sample_mc[-mask, ]
+    Sample_mc = Sample_mc[mask-1, ]
   }
   return(Sample_mc)   
   
@@ -216,7 +258,7 @@ d_norm_mix = Vectorize(FUN = norm_mix, vectorize.args = 'x')
 
 mix_gauss_2D <-function(mu, tau, z){
   
-  mus = mu * diag(2)
+  mus = mu * matrix(c(1,1,1,1), ncol=2)
   Sigma = sqrt(1/tau) * diag(2)
   N = colSums(z)
   
@@ -230,7 +272,6 @@ mix_gauss_2D <-function(mu, tau, z){
   return(all_S)
   
 }
-
 
 
 # ==== Group Function ====
