@@ -191,13 +191,13 @@ mc_sample_jags = jags(
   n.burnin = 2000
 )
 
-jags_m = new_x_sim(mc_sample_jags$BUGSoutput$sims.matrix[,-3])
-jags_m = show_mcmc(jags_m)
+jags_m_x = new_x_sim(mc_sample_jags$BUGSoutput$sims.matrix[,-3])
+jags_m_x = show_mcmc(jags_m_x)
 
 dev.copy(png, 'plot_9.png')
 dev.off()
 
-tbl_jags = get_table(jags_m)
+tbl_jags = get_table(jags_m_x)
 
 model_checking(jags_m$Sample, monkeys_data$y, get_dic = FALSE)
 

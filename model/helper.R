@@ -85,9 +85,7 @@ show_mcmc <-function(MC_){
   J = dim(MC_)[2]
   
   if (any(colnames(MC_) == 'lambda[1]')){
-    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau', 'x_new')
-  }else if(J>6){
-    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2','x_new')  
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau', 'new_x')
   }else{
     colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2')  
   }
