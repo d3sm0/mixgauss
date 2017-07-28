@@ -3,7 +3,7 @@
 \usepackage{titlesec}
 \usepackage{natbib}
 \usepackage{graphicx}
-\graphicspath{ {img/} }
+\graphicspath{ {model/} }
 \usepackage{amsmath}
 \allowdisplaybreaks[1]
 \usepackage{amsfonts}
@@ -192,20 +192,21 @@ For model selection, we will rely on the Deviance Information Criterion (DIC), d
 DIC = - 2 \log L(\bar{\theta}) + p_D
 \end{equation}
 
-Where $p_D$ is defined as the effective number of parameters of the model. The DIC criterion provide an intuitive interpretation as a model selection criteria. Less formally, the DIC favorites the model that represent the data better, with the fewer number of effective parameters.
+Where $p_D$ is defined as the effective number of parameters of the model. The DIC criterion provide an intuitive interpretation as a model selection criteria. Less formally, the DIC favorites the model that represent the data better, with the fewer number of effective parameters. As in line with the AIC criterion we would prefer the model with a lower DIC. %TBC%
 
 \section{Simulation study}
 In this simulation study, please consider the true normal mixture model with the following parameters $\vec \mu  = (530,550)$, $\vec \tau = (0.07, 0.065)$ and $\vec w = (0.6, 0.4)$, from which we generate 100 i.i.d samples.
 
+
 \begin{figure}[h!]
     \begin{subfigure}{0.5\textwidth}
-        \includegraphics[width=.7\textwidth]{plot_1.png}
-        \caption{True model. Mixture of Guassian.}
+        \includegraphics[width=.9\textwidth]{plot_1.png}
+        \caption{True model. Mixture of Guassian}
         \label{Mixture of gaussians}
     \end{subfigure}
     \begin{subfigure}{0.5\textwidth}
-        \includegraphics[width=.7\textwidth]{plot_2.png}
-        \caption{Sample from the true model}
+        \includegraphics[width=.9\textwidth]{plot_2.png}
+        \caption{2D sample by replicating mean axis.}
         \label{Mixture of gaussians}
     \end{subfigure}
 \end{figure}
@@ -224,7 +225,7 @@ The Gibbs sampling run for 10.000 iterations, with an initial burn-in of 2.000 s
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=.5\textwidth]{plot_3.png}
+    \includegraphics[width=.7\textwidth]{plot_3.png}
     \caption{Traceplot of a single MCMC}
     \label{Monkey measurement}
 \end{figure}
@@ -232,18 +233,18 @@ The Gibbs sampling run for 10.000 iterations, with an initial burn-in of 2.000 s
 In this example we can see the effect of label switching by looking at the trace plot of the the marginal distribution. In fact it seems that the chain starts exploring a subspace which doesn't seem consistent with the rest of the chain. It follows that if we use this sample to make inference, the inference itself will be spoiled by transition between modes. The point estimates are the following:
 
 % latex table generated in R 3.3.2 by xtable 1.8-2 package
-% Fri Jul 28 13:22:01 2017
+% Fri Jul 28 14:13:07 2017
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrrr}
   \hline
- & w1 & w2 & mu1 & mu2 & tau1 & tau2 \\ 
+    & w_1 & w_2 & \mu_1 & \mu_2 & \tau_1 & \tau_2 \\ 
   \hline
-Mean & 0.6173 & 0.3827 & 530.8212 & 549.2747 & 0.0698 & 0.0760 \\ 
-  Var & 0.0042 & 0.0042 & 0.5366 & 0.8935 & 0.0004 & 0.0008 \\ 
-  Tau\_B & 0.0000 & 0.0000 & 0.0063 & 0.0045 & 0.0000 & 0.0000 \\ 
-  Gamma\_G & 0.0037 & 0.0037 & 0.5226 & 0.9633 & 0.0004 & 0.0009 \\ 
-  T\_eff & 894.5530 & 894.5530 & 800.0000 & 800.0000 & 800.0000 & 777.6688 \\ 
+\hat{\mu} & 0.6173 & 0.3827 & 530.8212 & 549.2747 & 0.0698 & 0.0760 \\ 
+  \hat{\sigma}^2 & 0.0042 & 0.0042 & 0.5366 & 0.8935 & 0.0004 & 0.0008 \\ 
+  \hat{\tau}_B^2 & 0.0000 & 0.0000 & 0.0063 & 0.0045 & 0.0000 & 0.0000 \\ 
+  \hat{\gamma}_G^2 & 0.0037 & 0.0037 & 0.5226 & 0.9633 & 0.0004 & 0.0009 \\ 
+  \hat{\tau}_{eff} & 894.5530 & 894.5530 & 800.0000 & 800.0000 & 800.0000 & 777.6688 \\ 
    \hline
 \end{tabular}
 \end{table}
@@ -287,18 +288,18 @@ That is a Monte Carlo approximation of the MAP
 Notice that in step 2 we are minimizing a squared distance between two vectors, which resemble a computation of a sequence of loss function for each ith sample that we summarize in the scalar product of the 2k modes. This procedure is well implemented in R, in the ```label.switching``` package. Suitable initialization points to use as pivot points are the MLE estimates of the parameters that can be obtained via the ```MCclust``` package that use the EM algorithm to find the maximum likelihood estimate. With this in mind we can initialize the chain and compare the results with the previous run:
 
 % latex table generated in R 3.3.2 by xtable 1.8-2 package
-% Fri Jul 28 13:24:24 2017
+% Fri Jul 28 14:13:57 2017
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrrr}
   \hline
- & w1 & w2 & mu1 & mu2 & tau1 & tau2 \\ 
+    & w_1 & w_2 & \mu_1 & \mu_2 & \tau_1 & \tau_2 \\ 
   \hline
-Mean & 0.3842 & 0.6158 & 548.3712 & 531.7029 & 0.0763 & 0.0694 \\ 
-  Var & 0.0036 & 0.0036 & 15.4946 & 15.6496 & 0.0007 & 0.0004 \\ 
-  Tau\_B & 0.0000 & 0.0000 & 0.1605 & 0.1223 & 0.0000 & 0.0000 \\ 
-  Gamma\_G & 0.0039 & 0.0039 & 19.0515 & 17.3069 & 0.0008 & 0.0004 \\ 
-  T\_eff & 800.0000 & 800.0000 & 800.0000 & 800.0000 & 800.0000 & 800.0000 \\ 
+\hat{\mu} 0.3842 & 0.6158 & 548.3712 & 531.7029 & 0.0763 & 0.0694 \\ 
+  \hat{\sigma}^2 0.0036 & 0.0036 & 15.4946 & 15.6496 & 0.0007 & 0.0004 \\ 
+  \hat{\tau}_B^2 & 0.0000 & 0.0000 & 0.1605 & 0.1223 & 0.0000 & 0.0000 \\ 
+  \hat{\gamma}_G^2 & 0.0039 & 0.0039 & 19.0515 & 17.3069 & 0.0008 & 0.0004 \\ 
+  \hat{\tau}_{eff} & 800.0000 & 800.0000 & 800.0000 & 800.0000 & 800.0000 & 800.0000 \\ 
    \hline
 \end{tabular}
 \end{table}
@@ -307,7 +308,7 @@ We note that the effect of label switching on the previous to the relabeling pro
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=.5\textwidth]{plot_4.png}
+    \includegraphics[width=.7\textwidth]{plot_4.png}
     \caption{Traceplot after label switching}
     \label{Monkey measurement}
 \end{figure}
@@ -365,20 +366,21 @@ We can generate the first run of the Gibbs sampling with 10.000 samples, with th
 \subsection{Spoiled sample}
 The trace plot (fig. 5) shows that the sampler explored different portion of the parameter space, under the same "label" this can be spotted by noticing the `unusual` jumps in the trace. It seems that $\vec \mu \ and \  \vec w$ suffer the most of this behavior. One interesting and reasonable consequence of this exploration behavior is that different parameters may end up having high auto-correlation even in with large lag windows. As a result if we would accept posterior point estimates and intervals, we would expect similar values for different parameters, but more important an underestimate of the sample variance estimate. 
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.7\textwidth]{plot_6.png}
+    \caption{Trace plot of the first run.}
+    \label{Monkey measurement}
+\end{figure}
+
 \subsection{Ex-post relabelling}
 The application of the PRA requires a pivot point for each parameter. For this purpose we can use the `McClust` package to find the MLE estimates via the EM algorithm and use it as starting points for the new chain and pivot points for the re-labelling algorithm. Looking at the estimated densities we notice that there are traces of the mixing labels but it's much lower. As a positive side effect, we should also get lower auto correlation between components of the parameter vector.
 
 \begin{figure}[h!]
-    \begin{subfigure}{0.5\textwidth}
-        \includegraphics[width=.4\textwidth]{plot_6.png}
-        \caption{Traceplot of the first run.}
-        \label{Monkey measurement}
-    \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
-        \includegraphics[width=.4\textwidth]{plot_7.png}
-        \caption{Marginal densities post PRA}
-        \label{Monkey measurement}
-    \end{subfigure}
+    \centering
+    \includegraphics[width=.7\textwidth]{plot_7.png}
+    \caption{Marginal densities after PRA.}
+    \label{Monkey measurement}
 \end{figure}
 
 \subsection{Point estimate}
@@ -394,21 +396,23 @@ For each run I estimated mean, sample variance, batch variance,the initial seque
     \hat{\mu} & 0.5752 & 0.4248 & 537.8392 & 547.5201 & 0.0708 & 0.0816 \\ 
   \hat{\sigma}^2  & 0.0092 & 0.0092 & 11.0087 & 12.8970 & 0.0012 & 0.0024 \\ 
   \hat{\tau}_B^2 & 0.0014 & 0.0014 & 6.6756 & 6.7660 & 0.0001 & 0.0001 \\ 
-  \hat{\gamma}_G^2 & & 0.0459 & 0.0459 & 203.3975 & 214.8883 & 0.0017 & 0.0031 \\ 
+  \hat{\gamma}_G^2 & 0.0459 & 0.0459 & 203.3975 & 214.8883 & 0.0017 & 0.0031 \\ 
   \hat{\tau}_{eff} & 430.3858 & 430.3858 & 82.1076 & 107.5008 & 1451.3522 & 1486.9215 \\ 
    \hline
    sec. II &\\
     \hline
-  \hat{\mu}  & 0.5041 & 0.4959 & 539.0434 & 546.3235 & 0.0791 & 0.0746 \\ 
-  \hat{\sigma}^2  & 0.0142 & 0.0142 & 23.7958 & 20.7495 & 0.0016 & 0.0018 \\ 
-  \hat{\tau}_B^2  & 0.0005 & 0.0005 & 0.7997 & 0.8483 & 0.0000 & 0.0001 \\ 
-  \hat{\gamma}_G^2  & 0.0176 & 0.0176 & 25.9539 & 24.6188 & 0.0020 & 0.0024 \\ 
+\hat{\mu} & 0.5041 & 0.4959 & 539.0434 & 546.3235 & 0.0791 & 0.0746 \\ 
+  \hat{\sigma}^2 & 0.0142 & 0.0142 & 23.7958 & 20.7495 & 0.0016 & 0.0018 \\ 
+  \hat{\tau}_B^2 & 0.0005 & 0.0005 & 0.7997 & 0.8483 & 0.0000 & 0.0001 \\ 
+  \hat{\gamma}_G^2 & 0.0176 & 0.0176 & 25.9539 & 24.6188 & 0.0020 & 0.0024 \\ 
   \hat{\tau}_{eff} & 1559.5617 & 1559.5617 & 1800.0000 & 1659.7700 & 1523.0408 & 1589.1159 \\ 
+   \hline
 \end{tabular}
 \end{table}
 
+\newpage
 \subsection{Model selection}
-To complete the analysis, we can look at the capability of the model to replicate the observed data, and the DIC. The ability to replicate the data can be easily done by sampling a single value from a mixture of Gaussian, for each posterior sample. 
+To complete the analysis, we can look at the capability of the model to replicate the observed data, and the DIC. The ability to replicate the data can be easily done by sampling a single value from a mixture of Gaussian, for each posterior sample. The DIC for the model is 310.6009.
 
 \begin{figure}[h!]
     \centering
@@ -417,7 +421,6 @@ To complete the analysis, we can look at the capability of the model to replicat
     \label{Monkey measurement}
 \end{figure}
 
-The DIC for the model is 310.6009.
 
 \section{JAGS model}
 The prior model specification in the JAGS example are the following:
@@ -430,11 +433,11 @@ The prior model specification in the JAGS example are the following:
 \end{align*}
 
 \subsection{Simulation}
-In this model we have the same diffuse prior specification except for the fact that $\mu_2$ is shifted from $\mu_1$ with some positive random noise, which imply the separation and ordering of the mean vector. The initial value for the chain are the following $\mu_1 = 535, \ \theta = 5, \ \tau = 0.1,\ (w_1, w_2) = 0.5$. We run the chain for 20.000 iterations, with an initial burn-in of 2.000, and thin of 10. Looking at fig 9, the traceplot for $\mu_1, \mu_2$ doesn't show the same irregularities that we observed in the previous model and that's a natural consequence of the sequential order imposed in the prior specification. 
+In this model we have the same diffuse prior specification except for the fact that $\mu_2$ is shifted from $\mu_1$ with some positive random noise, which imply the separation and ordering of the mean vector. The initial value for the chain are the following $\mu_1 = 535, \ \theta = 5, \ \tau = 0.1,\ (w_1, w_2) = 0.5$. We run the chain for 20.000 iterations, with an initial burn-in of 2.000, and thin of 10. Looking at fig 9, the trac eplot for $\mu_1, \mu_2$ doesn't show the same irregularities that we observed in the previous model and that's a natural consequence of the sequential order imposed in the prior specification. 
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=.3\textwidth]{plot_10.png}
+    \includegraphics[width=.5\textwidth]{plot_9.png}
     \caption{Traceplot JAGS model}
     \label{Monkey measurement}
 \end{figure}
@@ -443,36 +446,34 @@ In this model we have the same diffuse prior specification except for the fact t
 The results of the posterior estimates are the following. We notice that this model produce samples with much lower variance that there is relevant difference in the estimates for the mixture weight. This is reasonable if we consider that we imposed a "blind" separation and order in the parameter space.
 
 % latex table generated in R 3.3.2 by xtable 1.8-2 package
-% Fri Jul 28 13:32:37 2017
+% Fri Jul 28 14:26:36 2017
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrrrrrr}
   \hline
- & w1 & w2 & mu1 & mu2 & tau & x\_new \\ 
+    & w_1 & w_2 & \mu_1 & \mu_2 & \tau_1 & \tau_2 \\ 
   \hline
-Mean & 0.5952 & 0.4048 & 536.7747 & 548.7103 & 0.0733 & 536.9903 \\ 
-  Var & 0.0112 & 0.0112 & 1.1953 & 2.3868 & 0.0005 & 13.1606 \\ 
-  Tau\_B & 0.0003 & 0.0003 & 0.0264 & 0.0544 & 0.0000 & 0.3175 \\ 
-  Gamma\_G & 0.0114 & 0.0114 & 1.3528 & 2.5043 & 0.0005 & 13.5918 \\ 
-  T\_eff & 1800.0000 & 1800.0000 & 1711.7000 & 1800.0000 & 1800.0000 & 1800.0000 \\ 
+\hat{\mu}& 0.5998 & 0.4002 & 536.8063 & 548.7575 & 0.0738 \\ 
+  \hat{\sigma}^2 & 0.0106 & 0.0106 & 1.1984 & 2.4634 & 0.0005 \\ 
+  \hat{\tau}_B^2 & 0.0003 & 0.0003 & 0.0139 & 0.0534 & 0.0000 \\ 
+  \hat{\gamma}_G^2 & 0.0112 & 0.0112 & 1.2034 & 2.4851 & 0.0005 \\ 
+  \hat{\tau}_{eff} & 1800.0000 & 1800.0000 & 2488.8282 & 1800.0000 & 1800.0000 \\ 
    \hline
 \end{tabular}
 \end{table}
 
 \subsection{Model selection}
-As for the previous model, we now turn computing the posterior predictive distribution and the DIC. As we can see from fig XXX, this model doesn't seem to be able to reproduce new samples along the overall spectra of possible measurements. An hypothesis for this effect it may rely on the difference in mixture weights estimates. Finally the DIC for this model is 362.3982.
+As for the previous model, we now turn computing the posterior predictive distribution and the DIC. As we can see from the following figure, this model doesn't seem to be able to reproduce new samples along the overall spectra of possible measurements. An hypothesis for this effect it may rely on the difference in mixture weights estimates. Finally the DIC for this model is 362.3982.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=.3\textwidth]{plot_11.png}
+    \includegraphics[width=.3\textwidth]{plot_10.png}
     \caption{Posterior predictive check}
     \label{Monkey measurement}
 \end{figure}
 
 \section{Results and discussion}
-As a short summary, We reviewed the basics of finite mixture of normal model, providing the mixture weights and completion representations. We dived into the inference problem connected to the in variance property of the likelihood, and more generally the presence of multiple modes. In the inferential setup, this problem is also know as label switching and we reviewed the two core ideas to clean a spoiled sample, namely prior ordering and ex-post relabelling. Then we defined the full Bayesian model using conjugate priors and separated variances, one for each mixture component. Finally we reviewed the model suggest by JAGS and we discussed the relevant differences, noticing that the provide model is less powerful in generating new data.
-
-The code can be found \href{https://github.com/d3sm0/mixgauss}{here}.
+As a short summary, We reviewed the basics of finite mixture of normal model, providing the mixture weights and completion representations. We dived into the inference problem connected to the in variance property of the likelihood, and more generally the presence of multiple modes. In the inferential setup, this problem is also know as label switching and we reviewed the two core ideas to clean a spoiled sample, namely prior ordering and ex-post relabelling. Then we defined the full Bayesian model using conjugate priors and separated variances, one for each mixture component. Finally we reviewed the model suggest by JAGS and we discussed the relevant differences, noticing that the provide model is less powerful in generating new data. The code can be found \href{https://github.com/d3sm0/mixgauss}{here}.
 
 \section{References}
 \begin{reference}
