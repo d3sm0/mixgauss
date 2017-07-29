@@ -62,7 +62,7 @@ hyper = list(
   rate_0 = 10 ^ (-3)
 )
 
-mc_sample = gibbs_mix(x, init, hyper, predict_x = FALSE, n_iter = 10000, n_thin = 10)
+mc_sample = gibbs_mix(x, init, hyper, predict_x = TRUE, n_iter = 10000, n_thin = 10)
 values = show_mcmc(mc_sample)
 dev.copy(png, 'plot_3.png')
 dev.off()
@@ -90,7 +90,7 @@ dev.copy(png, 'plot_4.png')
 dev.off()
 tbl = get_table(permuted_values)
 model_checking(MC_mle$Sample, x)
-tbl
+
 
 # === EYES example vanilla  ====
 
@@ -132,13 +132,14 @@ hyper = list(
   shape_0 = 10 ^ (-3),
   rate_0 = 10 ^ (-3)
 )
-
+# Run multiple times, some time get error, it could be due to the strong prior on dir
 mc_monkey = gibbs_mix(
   monkeys_data$y,
   init = list(mu = mu_m, z = z_m),
   hyper = hyper,
   n_iter = 20000,
-  n_thin = 10
+  n_thin = 10,
+  predict_x = TRUE
 )
 
 values_m = show_mcmc(mc_monkey)
@@ -148,7 +149,7 @@ dev.off()
 tbl_m = get_table(values_m)
 
 mc_clust_m = Mclust(data = monkeys_data$y)
-
+# to be run multiple times, maybe due to the strong prior ond dir
 mc_monkey_mle = gibbs_mix(
   monkeys_data$y,
   init = list(mu = mc_clust_m$parameters$mean, z = t(

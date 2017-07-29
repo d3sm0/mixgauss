@@ -85,9 +85,11 @@ show_mcmc <-function(MC_){
   J = dim(MC_)[2]
   
   if (any(colnames(MC_) == 'lambda[1]')){
-    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau', 'new_x')
-  }else{
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau', 'x_new')
+  }else if (J == 6 ){
     colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2')  
+  }else{
+    colnames(MC_)<- c('w1', 'w2', 'mu1', 'mu2', 'tau1', 'tau2', 'x_new')  
   }
   
   par(mfrow=c(2,3))
@@ -161,11 +163,8 @@ fix_label_switching <-function(MC_, C, J, mc_clust){
   )
   
   permuted_mcmc = matrix(permute.mcmc(mcmc =  mcmc_samples, permutations = pra_out$permutations)$output, nrow=L)
-  # if (dim(permuted_mcmc)[2]>J+C){
-  #   permuted_mcmc = permuted_mcmc[,-(J+C)]
-  # }
   return(permuted_mcmc)
-  # return(permuted_mcmc[,c(2,1,4,3,5)])
+ 
 }
 
 gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10,predict_x = FALSE){
@@ -175,7 +174,6 @@ gibbs_mix <- function(x, init, hyper, n_iter = 5000, burn_in = 2000, n_thin = 10
   C = length(init$mu)
   
   Mu  = W = Tau = matrix(NA, nrow = n_iter + 1, ncol = C)
-  
   
   if (predict_x == TRUE){
     X_new = rep(NA, n_iter +1)
